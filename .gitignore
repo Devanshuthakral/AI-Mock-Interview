@@ -1,0 +1,27 @@
+# --- Environment Variables (CRITICAL: Never leak your keys) ---
+.env
+
+# --- Python Virtual Environments ---
+venv/
+.venv/
+env/
+ENV/
+pyvenv.cfg
+
+# --- Python Cache Files ---
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Streamlit Specific Logs and Configs ---
+.streamlit/
+*.log
+
+# --- OS Generated Files ---
+.DS_Store
+Thumbs.db
+
+# --- Visual Studio Code Workspace Settings (Optional but good) ---
+.vscode/
+.idea/

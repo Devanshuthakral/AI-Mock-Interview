@@ -1,0 +1,8 @@
+streamlit
+streamlit-webrtc
+google-genai
+python-dotenv
+SpeechRecognition
+pyaudio
+gTTS
+plotly
