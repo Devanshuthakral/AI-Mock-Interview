@@ -133,3 +133,70 @@ elif st.session_state.stage == "LIVE":
                     st.session_state.play_trigger = True
 
             st.rerun()
+
+# --- STEP 3: FINAL EVALUATION DASHBOARD WITH GRAPHS ---
+elif st.session_state.stage == "ANALYTICS":
+    st.title("📊 Interview Performance Analytics")
+    st.subheader(f"Evaluation Summary for: {st.session_state.role}")
+    st.write("---")
+
+    with st.spinner("Generating automated technical evaluation report and charts..."):
+        # Groq/AI se final report fetch karega
+        report_text = get_final_analytics(st.session_state.role, st.session_state.history)
+
+    # --- SCORE PARSING LOGIC FOR GRAPH ---
+    tech_score = 0
+    comm_score = 0
+    conf_score = 0
+
+    try:
+        # Report text me se scores extract karne ke liye helper loop
+        for line in report_text.split("\n"):
+            if "Technical Score:" in line:
+                tech_score = int(line.split(":")[1].split("/")[0].strip())
+            elif "Communication Score:" in line:
+                comm_score = int(line.split(":")[1].split("/")[0].strip())
+            elif "Confidence Score:" in line:
+                conf_score = int(line.split(":")[1].split("/")[0].strip())
+    except Exception:
+        # Fallback values agar parse na ho paye
+        tech_score, comm_score, conf_score = 50, 50, 50
+
+    # Layout for Metrics and Charts
+    col_metrics, col_chart = st.columns([1, 2])
+
+    with col_metrics:
+        st.markdown("### 🎯 Performance Metrics")
+        st.metric(label="💻 Technical Score", value=f"{tech_score} / 100")
+        st.metric(label="🗣️ Communication Score", value=f"{comm_score} / 100")
+        st.metric(label="⚡ Confidence Score", value=f"{conf_score} / 100")
+
+    with col_chart:
+        st.markdown("### 📈 Skill Performance Visualizer")
+        
+        # Streamlit Bar Chart data prepration
+        chart_data = {
+            "Metric": ["Technical", "Communication", "Confidence"],
+            "Score": [tech_score, comm_score, conf_score]
+        }
+        
+        # Render a beautiful native horizontal bar chart
+        st.bar_chart(data=chart_data, x="Metric", y="Score", use_container_width=True)
+
+    st.write("---")
+
+    # Detailed text area for Strengths, Weaknesses and Suggestions
+    st.markdown("### 📋 AI Interviewer Detailed Feedback")
+    st.text_area("Detailed Matrix (Strengths & Weaknesses)", value=report_text, height=350, disabled=True)
+
+    st.write("---")
+    
+    # Reset Button
+    if st.button("🔄 Start New Interview Session", type="primary"):
+        st.session_state.stage = "SETUP"
+        st.session_state.history = []
+        st.session_state.curr_q = ""
+        st.session_state.q_num = 1
+        st.session_state.play_trigger = False
+        st.session_state.temp_user_response = ""
+        st.rerun()

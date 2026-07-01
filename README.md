@@ -1,15 +1,15 @@
 # 🤖 Enterprise AI Technical Interviewer
 
-An advanced, production-grade GenAI Mock Interview platform built using **Streamlit**, the official **Google Gen AI SDK (Gemini 2.5 Flash)**, and **WebRTC/STT Engines**. The application simulates real-world corporate technical rounds with continuous context-aware dynamic questioning, instant speech-to-text processing, automatic voice feedback, and a complete metric analytics dashboard.
+An advanced, production-grade GenAI Mock Interview platform built using **Streamlit**, **Groq Cloud API (Llama 3.3 70B)**, and **WebRTC/STT Engines**. The application simulates real-world corporate technical rounds with continuous context-aware dynamic questioning, instant speech-to-text processing, automatic voice feedback, and a complete metric analytics dashboard.
 
 ---
 
 ## 🚀 Key Features
 
-* **Dynamic Context-Aware Questioning:** Uses Gemini 2.5 to generate progressive, non-scripted follow-up questions based on previous candidate answers.
+* **Dynamic Context-Aware Questioning:** Uses state-of-the-art LLMs via Groq to generate progressive, non-scripted follow-up questions based on previous candidate answers.
 * **Audio Orchestration Engine:** Incorporates native browser TTS (Google Text-to-Speech) loops that read questions automatically, complete with a **Repeat Question** manual override function.
-* **Anti-Bypass Camera Validation:** Security logic monitors WebRTC video tracks; voice recording is strictly locked/disabled until the camera feed is live.
-* **Interactive Analytics Dashboard:** Parses evaluation metrics dynamically using `Plotly` radar graphs to score Technical Depth, Communication, and Confidence.
+* **Anti-Bypass Camera Validation:** Security logic monitors WebRTC video tracks; voice recording and audio pipelines are strictly locked/disabled until the camera feed is live.
+* **Interactive Analytics Dashboard:** Parses evaluation metrics dynamically to render real-time comparative charts scoring Technical Depth, Communication, and Confidence.
 * **Production Architecture:** Fully modular code separation dividing concerns into AI Logic, Voice Processing, and UI Components layers.
 
 ---
@@ -23,10 +23,18 @@ An advanced, production-grade GenAI Mock Interview platform built using **Stream
 
 ---
 
-### 2. Live Interview Interface (Active 1st Question)
+### 2. Live Interview Interface
 *Once active, the system injects automatic question audio, locks verification metrics, monitors the real-time camera track, and waits for voice capture pipelines to initiate.*
 
 ![Live Interview Evaluation Screen](screenshots/live_question_1.png)
+
+---
+
+### 3. Post-Interview Performance Analytics
+*After completing the set number of questions, the system aggregates session logs, parses the text stream, and displays a dynamic performance chart along with granular strengths and weaknesses analysis.*
+
+![Interview Performance Analytics](screenshots/analytics_dashboard.png)
+![AI Interviewer Detailed Feedback](screenshots/detailed_feedback.png)
 
 ---
 
@@ -37,15 +45,15 @@ ai-pro-interviewer/
 │
 ├── core/
 │   ├── __init__.py
-│   ├── ai_engine.py      # Gemini LLM Integration & Error-Proof Prompts
+│   ├── ai_engine.py      # Groq LLM Integration & Error-Proof Prompts
 │   └── voice_engine.py   # Base64 Audio TTS & Speech-to-Text pipelines
 │
 ├── ui/
 │   ├── __init__.py
 │   ├── components.py     # Camera, WebRTC and layout components
-│   └── dashboard.py      # Plotly Scorecard Analytics & Feedback UI
+│   └── dashboard.py      # Scorecard Analytics Charts & Feedback UI
 │
 ├── app.py                # Main Router / Controller Node
 ├── requirements.txt      # Python Dependencies
-├── .gitignore            # Git exclusion mapping
-└── .env                  # Environment API Keys (Private)
+├── .env                  # Environment API Keys (Private)
+└── README.md             # Project Documentation
