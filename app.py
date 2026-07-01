@@ -1,10 +1,11 @@
 import streamlit as st
 import base64
-from core.ai_engine import get_next_question, get_final_analytics
+import pypdf
+from core.ai_engine import get_next_question, get_final_analytics, check_ats_score 
 from core.voice_engine import listen_to_user, generate_audio_base64
-from ui.components import render_camera, DummyVideoProcessor # <- यहाँ इम्पोर्ट कर लिया
+from ui.components import render_camera, DummyVideoProcessor 
 from ui.dashboard import render_scorecard
-from streamlit_webrtc import webrtc_streamer, RTCConfiguration # <- इम्पोर्ट यहाँ शिफ्ट कर दिया
+from streamlit_webrtc import webrtc_streamer, RTCConfiguration 
 
 st.set_page_config(page_title="AI Pro Interviewer", page_icon="🤖", layout="wide")
 
@@ -18,24 +19,53 @@ if "temp_user_response" not in st.session_state: st.session_state.temp_user_resp
 
 MAX_QUESTIONS = 4
 
-# --- STEP 1: INITIAL PROFILE SCREEN ---
+# --- STEP 1: INITIAL PROFILE SCREEN + ATS CHECK ---
 if st.session_state.stage == "SETUP":
-    st.title("🚀 Enterprise AI Technical Interviewer")
-    st.markdown("Configure your target workspace settings below to deploy the adaptive grading agent.")
+    st.title("🚀 Enterprise AI Technical Interviewer & ATS Screener")
+    st.markdown("Upload your resume and enter the target Job Description to evaluate alignment before deploying the agent.")
     
-    role = st.text_input("Target Job Position / Profile Title:", placeholder="e.g., Cloud DevOps Engineer / Senior Backend Developer")
+    role = st.text_input("Target Job Position / Profile Title:", placeholder="e.g., AI/ML Engineer Intern")
+    job_desc = st.text_area("Paste Job Description (JD) Here:", placeholder="Enter the skills, responsibilities, and requirements...")
     
-    if st.button("Initiate Interview Session", type="primary"):
-        if role:
+    uploaded_file = st.file_uploader("Upload your Resume (PDF format only):", type=["pdf"])
+    
+    # Session state to store ATS checked data
+    if "ats_done" not in st.session_state: st.session_state.ats_done = False
+    if "ats_report" not in st.session_state: st.session_state.ats_report = ""
+
+    # Button 1: Check ATS Score
+    if st.button("📊 Evaluate Resume Alignment", type="secondary"):
+        if role and job_desc and uploaded_file:
+            with st.spinner("Parsing PDF and calculating ATS alignment matrix..."):
+                # PDF Text Extraction
+                pdf_reader = pypdf.PdfReader(uploaded_file)
+                resume_text = ""
+                for page in pdf_reader.pages:
+                    resume_text += page.extract_text()
+                
+                # Call ATS function
+                st.session_state.ats_report = check_ats_score(resume_text, job_desc)
+                st.session_state.ats_done = True
+        else:
+            st.warning("Please fill all fields and upload your resume PDF.")
+
+    # Show ATS report if evaluation is done
+    if st.session_state.ats_done:
+        st.write("---")
+        st.markdown("### 📋 ATS Screening Evaluation Results")
+        st.info(st.session_state.ats_report)
+        
+        st.success("✅ Evaluation Complete! You can now initiate your live technical round below.")
+        
+        # Button 2: Lock/Unlock Interview based on state
+        if st.button("Initiate Interview Session 🚀", type="primary"):
             st.session_state.role = role
-            with st.spinner("Generating opening round constraints..."):
+            with st.spinner("Generating targeted opening round constraints..."):
                 st.session_state.curr_q = get_next_question(role, [])
             st.session_state.history.append({"role": "interviewer", "content": st.session_state.curr_q})
             st.session_state.play_trigger = True  
             st.session_state.stage = "LIVE"
             st.rerun()
-        else:
-            st.warning("Please provide a valid corporate profile context.")
 
 # --- STEP 2: ACTIVE LIVE EVALUATION TRACK ---
 elif st.session_state.stage == "LIVE":
@@ -141,16 +171,13 @@ elif st.session_state.stage == "ANALYTICS":
     st.write("---")
 
     with st.spinner("Generating automated technical evaluation report and charts..."):
-        # Groq/AI se final report fetch karega
         report_text = get_final_analytics(st.session_state.role, st.session_state.history)
 
-    # --- SCORE PARSING LOGIC FOR GRAPH ---
     tech_score = 0
     comm_score = 0
     conf_score = 0
 
     try:
-        # Report text me se scores extract karne ke liye helper loop
         for line in report_text.split("\n"):
             if "Technical Score:" in line:
                 tech_score = int(line.split(":")[1].split("/")[0].strip())
@@ -159,10 +186,8 @@ elif st.session_state.stage == "ANALYTICS":
             elif "Confidence Score:" in line:
                 conf_score = int(line.split(":")[1].split("/")[0].strip())
     except Exception:
-        # Fallback values agar parse na ho paye
         tech_score, comm_score, conf_score = 50, 50, 50
 
-    # Layout for Metrics and Charts
     col_metrics, col_chart = st.columns([1, 2])
 
     with col_metrics:
@@ -174,24 +199,20 @@ elif st.session_state.stage == "ANALYTICS":
     with col_chart:
         st.markdown("### 📈 Skill Performance Visualizer")
         
-        # Streamlit Bar Chart data prepration
         chart_data = {
             "Metric": ["Technical", "Communication", "Confidence"],
             "Score": [tech_score, comm_score, conf_score]
         }
         
-        # Render a beautiful native horizontal bar chart
         st.bar_chart(data=chart_data, x="Metric", y="Score", use_container_width=True)
 
     st.write("---")
 
-    # Detailed text area for Strengths, Weaknesses and Suggestions
     st.markdown("### 📋 AI Interviewer Detailed Feedback")
     st.text_area("Detailed Matrix (Strengths & Weaknesses)", value=report_text, height=350, disabled=True)
 
     st.write("---")
     
-    # Reset Button
     if st.button("🔄 Start New Interview Session", type="primary"):
         st.session_state.stage = "SETUP"
         st.session_state.history = []

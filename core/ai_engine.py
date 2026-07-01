@@ -16,21 +16,75 @@ else:
 # Sabse tez aur best free model technical interview ke liye
 MODEL_NAME = "llama-3.3-70b-versatile"
 
-def get_next_question(role, history):
+
+def check_ats_score(resume_text, job_description):
+    """
+    Compares the uploaded resume with the Job Description using Groq.
+    Returns scores, missing keywords, and screening verdict.
+    """
+    if not client:
+        return "⚠️ GROQ_API_KEY Missing: Cannot parse ATS score."
+
+    prompt = f"""
+You are an advanced ATS (Applicant Tracking System) algorithm and an expert HR data scientist.
+Analyze the provided Resume Text against the Job Description (JD).
+
+Return the evaluation strictly in this markdown format:
+
+### 📊 ATS Match Score: xx%
+---
+**Verdict:** [Proceed to Interview] OR [Resume Needs Improvement - Missing Core Skills]
+---
+### 🔍 Detailed Breakdown:
+* **Missing Key Skills/Keywords:** - ...
+* **Profile Optimization Feedback:** - ...
+* **Why this verdict?** - ...
+
+Job Description (JD):
+{job_description}
+
+Resume Text:
+{resume_text}
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model=MODEL_NAME,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        return f"ATS Screening Error: {str(e)}"
+
+
+def get_next_question(role, history, job_desc=""):
+    """
+    Generates the next interview question based on the role, previous history,
+    and optionally tailors it to the provided Job Description (JD).
+    """
     if not client:
         return "⚠️ GROQ_API_KEY Missing: Check your .env file setup."
 
-    context = f"""
-You are an elite technical interviewer conducting a live interview for the '{role}' position.
-Review previous conversation and ask ONLY ONE progressive technical interview question.
-Do not explain. Do not give feedback. Do not ask multiple questions.
-Return only the interview question.
+    # Baseline context
+    context = f"You are an elite technical interviewer conducting a live interview for the '{role}' position."
+    
+    # Agar Job Description available hai, toh context ko customize karo
+    if job_desc:
+        context += f"\nHere is the target Job Description for this role:\n{job_desc}\nTailor your questions to map these exact requirements."
+
+    context += """
+Review the previous conversation history and ask ONLY ONE progressive technical interview question.
+CRITICAL LAWS:
+1. Return ONLY the plain text of the question.
+2. Do NOT use markdown formatting, do NOT use bold marks (**), and do NOT use bullet points.
+3. Do NOT explain or give feedback during the conversation.
+4. Keep the question crisp and straightforward.
 """
 
     # History format set karo
     messages = [{"role": "system", "content": context}]
     for m in history:
-        # Groq standard roles use karta hai: 'user' ya 'assistant'
         role_type = "assistant" if m['role'] == "interviewer" else "user"
         messages.append({"role": role_type, "content": m['content']})
 
@@ -43,6 +97,7 @@ Return only the interview question.
         return response.choices[0].message.content
     except Exception as e:
         return f"Groq AI Error: {str(e)}"
+
 
 def get_final_analytics(role, history):
     if not client:
