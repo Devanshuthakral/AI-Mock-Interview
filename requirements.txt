@@ -1,6 +1,6 @@
 streamlit
 streamlit-webrtc
-google-genai
+groq
 python-dotenv
 SpeechRecognition
 gTTS
