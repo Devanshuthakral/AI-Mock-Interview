@@ -13,19 +13,18 @@ if api_key:
 else:
     client = None
 
-# Groq Active Models List
+# Purely active Groq Models (Without deprecated names)
 MODELS_TO_TRY = [
     "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
-    "qwen-2.5-coder-32b"
+    "llama-3.1-8b-instant"
 ]
 
 def call_groq_api(messages, temperature=0.3):
     """
-    Ek ke baad ek models try karta hai jab tak exact active model na mil jaye.
+    Tries valid models sequentially and captures clean errors.
     """
     if not client:
-        raise Exception("GROQ_API_KEY Missing")
+        raise Exception("GROQ_API_KEY Missing in .env file")
         
     last_error = None
     for model_name in MODELS_TO_TRY:
@@ -37,16 +36,12 @@ def call_groq_api(messages, temperature=0.3):
             )
         except Exception as e:
             last_error = e
-            continue  # Agla model try karega
+            continue
             
-    raise Exception(f"All models failed. Last error: {str(last_error)}")
+    raise Exception(f"API Error: {str(last_error)}")
 
 
 def check_ats_score(resume_text, job_description):
-    """
-    Compares the uploaded resume with the Job Description using Groq.
-    Returns scores, missing keywords, and screening verdict.
-    """
     if not client:
         return "⚠️ GROQ_API_KEY Missing: Cannot parse ATS score."
 
@@ -83,17 +78,11 @@ Resume Text:
 
 
 def get_next_question(role, history, job_desc=""):
-    """
-    Generates the next interview question based on the role, previous history,
-    and optionally tailors it to the provided Job Description (JD).
-    """
     if not client:
         return "⚠️ GROQ_API_KEY Missing: Check your .env file setup."
 
-    # Baseline context
     context = f"You are an elite technical interviewer conducting a live interview for the '{role}' position."
     
-    # Agar Job Description available hai, toh context ko customize karo
     if job_desc:
         context += f"\nHere is the target Job Description for this role:\n{job_desc}\nTailor your questions to map these exact requirements."
 
@@ -106,7 +95,6 @@ CRITICAL LAWS:
 4. Keep the question crisp and straightforward.
 """
 
-    # History format set karo
     messages = [{"role": "system", "content": context}]
     for m in history:
         role_type = "assistant" if m['role'] == "interviewer" else "user"
@@ -129,7 +117,6 @@ def get_final_analytics(role, history):
     context = f"You are a senior hiring manager. Analyze this interview for the role: {role}. Return exactly in the requested format."
     
     messages = [{"role": "system", "content": context}]
-    
     formatted_transcript = "\n".join([f"{m['role'].upper()}: {m['content']}" for m in history])
     
     prompt = f"""
