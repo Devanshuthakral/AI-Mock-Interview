@@ -14,11 +14,12 @@ else:
     client = None
 
 # Multiple fallback models ki list (jo pehle chal jaye wo use hoga)
+# Groq Active Supported Models
 MODELS_TO_TRY = [
     "llama-3.3-70b-versatile",
     "llama-3.1-8b-instant",
-    "mixtral-8x7b-32768",
-    "gemma2-9b-it"
+    "qwen-2.5-coder-32b",
+    "deepseek-r1-distill-llama-70b"
 ]
 
 def call_groq_api(messages, temperature=0.3):
