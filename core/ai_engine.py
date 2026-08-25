@@ -14,7 +14,7 @@ else:
     client = None
 
 # Sabse tez aur best free model technical interview ke liye
-MODEL_NAME = "llama-3.3-70b-specdec"
+MODEL_NAME = "llama-3.3-70b-versatile"
 
 
 def check_ats_score(resume_text, job_description):
