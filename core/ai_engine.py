@@ -13,31 +13,34 @@ if api_key:
 else:
     client = None
 
-# Primary aur Fallback models define karo
-PRIMARY_MODEL = "llama-3.3-70b-versatile"
-FALLBACK_MODEL = "llama-3.1-8b-instant"
+# Multiple fallback models ki list (jo pehle chal jaye wo use hoga)
+MODELS_TO_TRY = [
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "mixtral-8x7b-32768",
+    "gemma2-9b-it"
+]
 
 def call_groq_api(messages, temperature=0.3):
     """
-    Primary model try karega. Agar 404 ya koi error aata hai, 
-    toh automatically fallback model se output layega.
+    Ek ke baad ek models try karta hai jab tak exact active model na mil jaye.
     """
     if not client:
         raise Exception("GROQ_API_KEY Missing")
         
-    try:
-        return client.chat.completions.create(
-            model=PRIMARY_MODEL,
-            messages=messages,
-            temperature=temperature
-        )
-    except Exception as e:
-        # Fallback to guaranteed active model
-        return client.chat.completions.create(
-            model=FALLBACK_MODEL,
-            messages=messages,
-            temperature=temperature
-        )
+    last_error = None
+    for model_name in MODELS_TO_TRY:
+        try:
+            return client.chat.completions.create(
+                model=model_name,
+                messages=messages,
+                temperature=temperature
+            )
+        except Exception as e:
+            last_error = e
+            continue  # Agla model try karega
+            
+    raise Exception(f"All models failed. Last error: {str(last_error)}")
 
 
 def check_ats_score(resume_text, job_description):
