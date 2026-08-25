@@ -13,18 +13,19 @@ if api_key:
 else:
     client = None
 
-# Purely active Groq Models (Without deprecated names)
+# Active production models on Groq
 MODELS_TO_TRY = [
     "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant"
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b"
 ]
 
 def call_groq_api(messages, temperature=0.3):
     """
-    Tries valid models sequentially and captures clean errors.
+    Sequentially tests verified active models without breaking on isolated model exceptions.
     """
     if not client:
-        raise Exception("GROQ_API_KEY Missing in .env file")
+        raise Exception("GROQ_API_KEY is missing in your .env configuration.")
         
     last_error = None
     for model_name in MODELS_TO_TRY:
