@@ -13,8 +13,31 @@ if api_key:
 else:
     client = None
 
-# Sabse tez aur best free model technical interview ke liye
-MODEL_NAME = "llama-3.3-70b-versatile"
+# Primary aur Fallback models define karo
+PRIMARY_MODEL = "llama-3.3-70b-versatile"
+FALLBACK_MODEL = "llama-3.1-8b-instant"
+
+def call_groq_api(messages, temperature=0.3):
+    """
+    Primary model try karega. Agar 404 ya koi error aata hai, 
+    toh automatically fallback model se output layega.
+    """
+    if not client:
+        raise Exception("GROQ_API_KEY Missing")
+        
+    try:
+        return client.chat.completions.create(
+            model=PRIMARY_MODEL,
+            messages=messages,
+            temperature=temperature
+        )
+    except Exception as e:
+        # Fallback to guaranteed active model
+        return client.chat.completions.create(
+            model=FALLBACK_MODEL,
+            messages=messages,
+            temperature=temperature
+        )
 
 
 def check_ats_score(resume_text, job_description):
@@ -48,8 +71,7 @@ Resume Text:
 """
 
     try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
+        response = call_groq_api(
             messages=[{"role": "user", "content": prompt}],
             temperature=0.3
         )
@@ -89,8 +111,7 @@ CRITICAL LAWS:
         messages.append({"role": role_type, "content": m['content']})
 
     try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
+        response = call_groq_api(
             messages=messages,
             temperature=0.7
         )
@@ -134,8 +155,7 @@ Interview Transcript:
     messages.append({"role": "user", "content": prompt})
 
     try:
-        response = client.chat.completions.create(
-            model=MODEL_NAME,
+        response = call_groq_api(
             messages=messages,
             temperature=0.3
         )
