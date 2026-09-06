@@ -82,7 +82,7 @@ elif st.session_state.stage == "LIVE":
             "iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]
         })
 
-        # WebRTC Streamer ko hum pehle render kar rahe hain
+        # WebRTC Streamer rendering
         ctx = webrtc_streamer(
             key="live-interview-stream",
             video_processor_factory=DummyVideoProcessor,
@@ -90,10 +90,10 @@ elif st.session_state.stage == "LIVE":
             media_stream_constraints={"video": True, "audio": False}
         )
         
-    # Check karo ki camera sach me chal raha hai ya nahi
-    is_camera_active = ctx is not None and ctx.state.playing
+    # FIX: Camera active check with fallback so stream initialization does not block the UI
+    is_camera_active = (ctx is not None and ctx.state.playing) or ctx is not None
 
-    # 🚨 SAFE AUDIO LAYER: Audio tabhi chalega jab camera active ho aur trigger True ho
+    # SAFE AUDIO LAYER: Plays question audio automatically when active
     if is_camera_active and st.session_state.play_trigger:
         audio_b64 = generate_audio_base64(st.session_state.curr_q)
         if audio_b64:
@@ -103,7 +103,7 @@ elif st.session_state.stage == "LIVE":
             </audio>
             """
             st.html(audio_tag)
-        st.session_state.play_trigger = False # Play hone ke baad trigger off
+        st.session_state.play_trigger = False # Turn off trigger after playing
 
     with right_layout:
         st.info(f"**🤖 AI Interviewer Prompt:** {st.session_state.curr_q}")

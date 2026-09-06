@@ -8,9 +8,16 @@ class DummyVideoProcessor(VideoProcessorBase):
 
 def render_camera():
     st.write("### 🎥 Live Video Feed")
-    webrtc_streamer(
+    
+    # WEBRTC OBJECT CAPTURE (`ctx` me store kar rahe hain)
+    ctx = webrtc_streamer(
         key="live-interview-stream",
         video_processor_factory=DummyVideoProcessor,
         rtc_configuration=RTC_CONFIGURATION,
         media_stream_constraints={"video": True, "audio": False}
     )
+    
+    # Return True when camera START is clicked and playing
+    if ctx.state.playing:
+        return True
+    return False
